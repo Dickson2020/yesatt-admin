@@ -16,6 +16,7 @@ import SupportPage from "./pages/SupportPage";
 import TransactionsPage from "./pages/TransactionsPage";
 import SettingsPage from "./pages/SettingsPage";
 import VerificationPage from "./pages/VerificationPage";
+import BroadcastPage from "./pages/BroadcastPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
 const queryClient = new QueryClient({
@@ -45,6 +46,7 @@ const App = () => (
           <Route path="/transactions" element={<TransactionsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/verification" element={<VerificationPage />} />
+          <Route path="/broadcast" element={<BroadcastPage />} />
           <Route path="/profile" element={<Navigate to="/settings" replace />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

@@ -9,7 +9,8 @@ import {
   MessageSquare, 
   CreditCard, 
   Settings,
-  LogOut
+  LogOut,
+  Megaphone
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDashboard } from '@/contexts/DashboardContext';
@@ -54,6 +55,11 @@ const Sidebar: React.FC = () => {
       name: 'Transactions',
       path: '/transactions',
       icon: <CreditCard className="h-5 w-5" />
+    },
+    {
+      name: 'Broadcast',
+      path: '/broadcast',
+      icon: <Megaphone className="h-5 w-5" />
     },
     {
       name: 'Settings',

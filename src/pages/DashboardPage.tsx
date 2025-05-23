@@ -23,6 +23,13 @@ const formatCurrency = (value: number): string => {
 const DashboardPage: React.FC = () => {
   const { stats, loading } = useDashboard();
 
+  // Create properly typed dispatch stats
+  const dispatchStats = {
+    waiting: stats?.dispatchStat?.waiting || 0,
+    onTheWay: stats?.dispatchStat?.onTheWay || 0,
+    arriving: stats?.dispatchStat?.arriving || 0
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -123,7 +130,7 @@ const DashboardPage: React.FC = () => {
           ) : (
             <>
               <div className="lg:col-span-1">
-                <DispatchStatus stats={stats?.dispatchStat || []} />
+                <DispatchStatus stats={dispatchStats} />
               </div>
               <div className="lg:col-span-2">
                 <LiveMap />

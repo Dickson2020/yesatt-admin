@@ -1,84 +1,32 @@
 
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Chart, registerables } from 'chart.js';
-
-// Register all Chart.js components
-Chart.register(...registerables);
+import { ChartContainer } from '@/components/ui/chart';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface RidesChartProps {
   hourlyRides: number[];
 }
 
 const RidesChart: React.FC<RidesChartProps> = ({ hourlyRides }) => {
-  const chartRef = useRef<HTMLCanvasElement | null>(null);
-  const chartInstance = useRef<Chart | null>(null);
+  // Create an array of objects with time labels for the chart
+  const timeLabels = [
+    '6:00 AM', '7:00 AM', '8:00 AM', '9:00 AM', 
+    '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', 
+    '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM'
+  ];
 
-  useEffect(() => {
-    if (chartRef.current) {
-      // Destroy existing chart instance if it exists
-      if (chartInstance.current) {
-        chartInstance.current.destroy();
-      }
+  const chartData = hourlyRides.map((rides, index) => ({
+    time: timeLabels[index],
+    rides,
+  }));
 
-      const ctx = chartRef.current.getContext('2d');
-      if (ctx) {
-        const timeLabels = [
-          '6:00 AM', '7:00 AM', '8:00 AM', '9:00 AM', 
-          '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', 
-          '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM'
-        ];
-
-        const blueShades = [
-          '#87CEEB', '#00BFFF', '#ADD8E6', '#6495ED', 
-          '#4682B4', '#87CEEB', '#00BFFF', '#ADD8E6', 
-          '#6495ED', '#4682B4', '#87CEEB', '#00BFFF', '#ADD8E6'
-        ];
-
-        chartInstance.current = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: timeLabels,
-            datasets: [{
-              label: 'Rides',
-              data: hourlyRides,
-              backgroundColor: blueShades,
-              borderColor: blueShades.map(color => color.replace(')', ', 0.7)')),
-              borderWidth: 1
-            }]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: {
-                display: false
-              },
-              title: {
-                display: true,
-                text: 'Realtime Ride Shares Today'
-              }
-            },
-            scales: {
-              y: {
-                beginAtZero: true,
-                ticks: {
-                  precision: 0
-                }
-              }
-            },
-            maintainAspectRatio: false,
-          }
-        });
-      }
-    }
-
-    // Cleanup function
-    return () => {
-      if (chartInstance.current) {
-        chartInstance.current.destroy();
-      }
-    };
-  }, [hourlyRides]);
+  // Define blue shades for visual variety
+  const blueShades = [
+    '#87CEEB', '#00BFFF', '#ADD8E6', '#6495ED', 
+    '#4682B4', '#87CEEB', '#00BFFF', '#ADD8E6', 
+    '#6495ED', '#4682B4', '#87CEEB', '#00BFFF', '#ADD8E6'
+  ];
 
   return (
     <Card className="h-full">
@@ -86,7 +34,43 @@ const RidesChart: React.FC<RidesChartProps> = ({ hourlyRides }) => {
         <CardTitle>Rides Today</CardTitle>
       </CardHeader>
       <CardContent className="relative h-[300px]">
-        <canvas ref={chartRef}></canvas>
+        <ChartContainer 
+          config={{
+            rides: { color: '#00BFFF', label: 'Rides' }
+          }}
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={chartData}
+              margin={{
+                top: 5,
+                right: 30,
+                left: 20,
+                bottom: 5,
+              }}
+            >
+              <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+              <XAxis 
+                dataKey="time" 
+                tick={{ fontSize: 10 }}
+                tickMargin={8}
+              />
+              <YAxis
+                tickCount={5}
+                tick={{ fontSize: 10 }}
+              />
+              <Tooltip 
+                cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
+                formatter={(value) => [`${value} rides`, 'Rides']}
+              />
+              <Bar
+                dataKey="rides"
+                fill="#87CEEB"
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartContainer>
       </CardContent>
     </Card>
   );

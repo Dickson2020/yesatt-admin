@@ -1,174 +1,125 @@
 
-import React, { useState, useEffect } from 'react';
-import { useToast } from "@/hooks/use-toast";
+import React, { useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trash2, Eye, MoreHorizontal, Search, Loader, AlertTriangle } from 'lucide-react';
-import {
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import api from '@/services/api';
-import { Driver, PaginationData } from '@/types';
-import PaginationControls from '@/components/tables/PaginationControls';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, Search, UserPlus, RefreshCw } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/components/ui/use-toast';
 
-const DriversPage: React.FC = () => {
-  const [drivers, setDrivers] = useState<Driver[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [pagination, setPagination] = useState<PaginationData>({
-    currentPage: 1,
-    totalPages: 1,
-    totalItems: 0
-  });
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState<boolean>(false);
-  const [currentDriverId, setCurrentDriverId] = useState<number | null>(null);
-  const [isBalanceModalOpen, setIsBalanceModalOpen] = useState<boolean>(false);
-  const [currentBalance, setCurrentBalance] = useState<number>(0);
-  
+const DriversPage = () => {
   const { toast } = useToast();
-
-  useEffect(() => {
-    fetchDrivers(1);
-  }, []);
-
-  const fetchDrivers = async (page: number) => {
-    try {
-      setLoading(true);
-      const response = await api.getDrivers(page);
+  const [loading, setLoading] = useState(false);
+  const [drivers, setDrivers] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  // Mock function to simulate fetching drivers
+  const fetchDrivers = (page: number = 1) => {
+    setLoading(true);
+    // Simulating API call
+    setTimeout(() => {
+      const mockDrivers = Array.from({ length: 10 }, (_, index) => ({
+        id: index + 1 + (page - 1) * 10,
+        name: `Driver ${index + 1 + (page - 1) * 10}`,
+        email: `driver${index + 1 + (page - 1) * 10}@example.com`,
+        phone: `+1 555-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+        country: ['USA', 'UK', 'Canada', 'Australia', 'Germany'][Math.floor(Math.random() * 5)],
+        stripe_customer_id: `cus_${Math.random().toString(36).substring(2, 10)}`,
+        verified: Math.random() > 0.3 ? 1 : 0,
+        account_balance: Math.floor(Math.random() * 1000)
+      }));
       
-      if (response) {
-        setDrivers(response.data?.users || []);
-        setPagination({
-          currentPage: page,
-          totalPages: response.pagination?.totalPages || 1,
-          totalItems: response.pagination?.totalItems || 0
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching drivers:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load drivers",
-        variant: "destructive",
-      });
-    } finally {
+      setDrivers(mockDrivers);
       setLoading(false);
-    }
+    }, 1000);
   };
-
+  
+  // Fetch drivers on initial load
+  React.useEffect(() => {
+    fetchDrivers();
+  }, []);
+  
   const handlePageChange = (page: number) => {
+    setCurrentPage(page);
     fetchDrivers(page);
   };
-
-  const handleDelete = async () => {
-    if (!currentDriverId) return;
-    
-    try {
-      const response = await api.deleteAccount(currentDriverId, 'driver');
-      
-      if (response && response.status) {
-        toast({
-          title: "Success",
-          description: "Driver deleted successfully",
-        });
-        fetchDrivers(pagination.currentPage);
-      } else {
-        toast({
-          title: "Error",
-          description: response.message || "Failed to delete driver",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Error deleting driver:', error);
-      toast({
-        title: "Error",
-        description: "An error occurred while deleting the driver",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDeleteDialogOpen(false);
-      setCurrentDriverId(null);
-    }
+  
+  const handleRefresh = () => {
+    fetchDrivers(currentPage);
+    toast({
+      title: "Refreshed",
+      description: "Driver list has been updated.",
+    });
   };
-
-  const openDeleteDialog = (id: number) => {
-    setCurrentDriverId(id);
-    setIsDeleteDialogOpen(true);
+  
+  const previewBalance = (balance: number) => {
+    toast({
+      title: "Wallet Balance",
+      description: `$${balance.toLocaleString()} USD`,
+      variant: "default"
+    });
   };
-
-  const viewBalance = (balance: number) => {
-    setCurrentBalance(balance);
-    setIsBalanceModalOpen(true);
+  
+  const triggerDelete = (id: number) => {
+    // In a real app, this would show a confirmation dialog and then call the API
+    toast({
+      title: "Driver Deleted",
+      description: `Driver with ID ${id} has been deleted.`,
+      variant: "default"
+    });
   };
-
-  const getStatusBadge = (status: number) => {
-    if (status === 1) {
-      return <Badge variant="success">Online</Badge>;
-    } else {
-      return <Badge variant="outline">Offline</Badge>;
-    }
-  };
-
-  const filteredDrivers = drivers.filter(driver => 
-    driver.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    driver.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    driver.phone.includes(searchTerm)
-  );
-
+  
   return (
     <DashboardLayout>
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Drivers Management</h1>
-          <div className="flex items-center space-x-2">
-            <div className="relative">
-              <Search className="h-4 w-4 absolute left-2.5 top-2.5 text-gray-500" />
-              <Input
-                placeholder="Search drivers..."
-                className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <Button variant="outline">Export</Button>
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">Drivers</h1>
+        
+        <div className="flex flex-col sm:flex-row justify-between gap-4">
+          <div className="relative max-w-sm">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+            <Input
+              placeholder="Search drivers..."
+              className="pl-8"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={handleRefresh} variant="outline" size="sm">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            <Button size="sm">
+              <UserPlus className="h-4 w-4 mr-2" />
+              Add Driver
+            </Button>
           </div>
         </div>
-
+        
         <Card>
-          <CardHeader>
-            <CardTitle>All Drivers</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle>Drivers List</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader className="h-8 w-8 animate-spin text-primary" />
+              <div className="space-y-2">
+                {Array.from({ length: 5 }).map((_, idx) => (
+                  <Skeleton key={idx} className="h-12 w-full" />
+                ))}
               </div>
             ) : drivers.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <AlertTriangle className="h-12 w-12 text-amber-500 mb-2" />
-                <h3 className="text-lg font-medium">No drivers found</h3>
-                <p className="text-gray-500">There are no drivers registered in the system.</p>
+              <div className="text-center py-10" id="no-drivers-error">
+                <p className="text-muted-foreground">No drivers found</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="rounded-md border">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -178,40 +129,34 @@ const DriversPage: React.FC = () => {
                       <TableHead>Country</TableHead>
                       <TableHead>Stripe ID</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredDrivers.map((driver) => (
+                    {drivers.map((driver) => (
                       <TableRow key={driver.id}>
-                        <TableCell className="font-medium">{driver.name}</TableCell>
+                        <TableCell>{driver.name}</TableCell>
                         <TableCell>{driver.email}</TableCell>
                         <TableCell>{driver.phone}</TableCell>
                         <TableCell>{driver.country}</TableCell>
-                        <TableCell>{driver.stripe_customer_id || 'N/A'}</TableCell>
+                        <TableCell>{driver.stripe_customer_id}</TableCell>
                         <TableCell>
-                          <div className="flex flex-col gap-1">
-                            <Badge variant={Number(driver.verified) === 1 ? "default" : "outline"}>
-                              {Number(driver.verified) === 1 ? 'Active' : 'Not Verified'}
-                            </Badge>
-                            {getStatusBadge(driver.status)}
-                          </div>
+                          <Badge variant={Number(driver.verified) === 1 ? "default" : "secondary"}>
+                            {Number(driver.verified) === 1 ? 'Active' : 'Not Verified'}
+                          </Badge>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
+                              <Button variant="ghost" size="icon">
                                 <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Actions</span>
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => viewBalance(driver.account_balance)}>
-                                <Eye className="mr-2 h-4 w-4" />
+                              <DropdownMenuItem onClick={() => previewBalance(driver.account_balance)}>
                                 View Wallet Balance
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => openDeleteDialog(driver.id)}>
-                                <Trash2 className="mr-2 h-4 w-4" />
+                              <DropdownMenuItem onClick={() => triggerDelete(driver.id)}>
                                 Delete
                               </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -221,55 +166,43 @@ const DriversPage: React.FC = () => {
                     ))}
                   </TableBody>
                 </Table>
-                
-                <PaginationControls
-                  pagination={pagination}
-                  onPageChange={handlePageChange}
-                />
               </div>
             )}
+            
+            {/* Pagination */}
+            <div className="flex justify-center mt-4">
+              <nav className="flex items-center space-x-1" id="drivers-list-pagination">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  disabled={currentPage === 1}
+                  onClick={() => handlePageChange(currentPage - 1)}
+                >
+                  &lt;
+                </Button>
+                {[1, 2, 3].map((page) => (
+                  <Button 
+                    key={page} 
+                    variant={page === currentPage ? "default" : "outline"}
+                    size="icon"
+                    onClick={() => handlePageChange(page)}
+                  >
+                    {page}
+                  </Button>
+                ))}
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  disabled={currentPage === 3}
+                  onClick={() => handlePageChange(currentPage + 1)}
+                >
+                  &gt;
+                </Button>
+              </nav>
+            </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Delete Driver Dialog */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the driver
-              account and remove their data from our servers.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Balance View Dialog */}
-      <AlertDialog open={isBalanceModalOpen} onOpenChange={setIsBalanceModalOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Wallet Balance</AlertDialogTitle>
-            <div className="mt-4 text-center">
-              <p className="text-3xl font-bold text-primary">
-                ${new Intl.NumberFormat().format(currentBalance)}
-              </p>
-              <p className="text-sm text-gray-500 mt-1">USD</p>
-            </div>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setIsBalanceModalOpen(false)}>
-              Close
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </DashboardLayout>
   );
 };

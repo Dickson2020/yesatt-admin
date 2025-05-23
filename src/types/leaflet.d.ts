@@ -1,4 +1,8 @@
 
-declare namespace window {
-  const L: any;
+declare global {
+  interface Window {
+    L: any;  // Leaflet global object
+  }
 }
+
+export {};

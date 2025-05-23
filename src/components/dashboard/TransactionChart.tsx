@@ -1,10 +1,14 @@
 
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Chart, registerables } from 'chart.js';
-
-// Register all Chart.js components
-Chart.register(...registerables);
+import { 
+  ChartContainer, 
+  ChartTooltip, 
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent
+} from '@/components/ui/chart';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
 interface TransactionChartProps {
   inflow: number;
@@ -12,70 +16,60 @@ interface TransactionChartProps {
 }
 
 const TransactionChart: React.FC<TransactionChartProps> = ({ inflow, outflow }) => {
-  const chartRef = useRef<HTMLCanvasElement | null>(null);
-  const chartInstance = useRef<Chart | null>(null);
-
-  useEffect(() => {
-    if (chartRef.current) {
-      // Destroy existing chart instance if it exists
-      if (chartInstance.current) {
-        chartInstance.current.destroy();
-      }
-
-      // Create new chart
-      const ctx = chartRef.current.getContext('2d');
-      if (ctx) {
-        chartInstance.current = new Chart(ctx, {
-          type: 'doughnut',
-          data: {
-            labels: ['Inflow', 'Outflow'],
-            datasets: [{
-              data: [inflow, outflow],
-              backgroundColor: [
-                '#87CEEB', // Light blue for inflow
-                '#FFA07A', // Light salmon for outflow
-              ],
-              borderColor: [
-                '#ffffff',
-                '#ffffff',
-              ],
-              borderWidth: 2,
-              hoverOffset: 4
-            }]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: {
-                position: 'bottom',
-              },
-              title: {
-                display: true,
-                text: 'Payments Ratio'
-              }
-            },
-            cutout: '70%',
-            maintainAspectRatio: false,
-          }
-        });
-      }
-    }
-
-    // Cleanup function
-    return () => {
-      if (chartInstance.current) {
-        chartInstance.current.destroy();
-      }
-    };
-  }, [inflow, outflow]);
-
+  const data = [
+    { name: 'Inflow', value: inflow },
+    { name: 'Outflow', value: outflow },
+  ];
+  
+  const COLORS = ['#87CEEB', '#FFA07A'];
+  
   return (
     <Card className="h-full">
       <CardHeader>
         <CardTitle>Transaction Overview</CardTitle>
       </CardHeader>
       <CardContent className="relative h-[300px]">
-        <canvas ref={chartRef}></canvas>
+        <ChartContainer 
+          config={{
+            inflow: { color: '#87CEEB', label: 'Inflow' },
+            outflow: { color: '#FFA07A', label: 'Outflow' },
+          }}
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                innerRadius="60%"
+                outerRadius="80%"
+                paddingAngle={5}
+                dataKey="value"
+                nameKey="name"
+              >
+                {data.map((entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={COLORS[index % COLORS.length]} 
+                    stroke="#ffffff"
+                    strokeWidth={2}
+                  />
+                ))}
+              </Pie>
+              <ChartTooltip 
+                content={(props) => (
+                  <ChartTooltipContent {...props} />
+                )} 
+              />
+              <ChartLegend
+                verticalAlign="bottom"
+                content={(props) => (
+                  <ChartLegendContent {...props} />
+                )}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </ChartContainer>
       </CardContent>
     </Card>
   );

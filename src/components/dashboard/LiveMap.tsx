@@ -1,150 +1,107 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDashboard } from '@/contexts/DashboardContext';
-import { Booking } from '@/types';
-import { Loader } from 'lucide-react';
-
-interface MapProps {
-  bookings: Booking[];
-}
-
-// This component will load Leaflet dynamically when rendered
-const MapComponent: React.FC<MapProps> = ({ bookings }) => {
-  useEffect(() => {
-    // Create a script element for Leaflet CSS
-    const linkElement = document.createElement('link');
-    linkElement.rel = 'stylesheet';
-    linkElement.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-    linkElement.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
-    linkElement.crossOrigin = '';
-    document.head.appendChild(linkElement);
-
-    // Create a script element for Leaflet JS
-    const scriptElement = document.createElement('script');
-    scriptElement.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-    scriptElement.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
-    scriptElement.crossOrigin = '';
-    document.head.appendChild(scriptElement);
-
-    // Wait for Leaflet to load
-    scriptElement.onload = () => {
-      // Initialize the map
-      const L = window.L;
-      if (!L) return;
-      
-      const mapOptions = {
-        center: [17.385044, 78.486671],
-        zoom: 13
-      };
-      
-      // Create the map
-      const map = L.map('map', mapOptions);
-      
-      // Add the tile layer
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-      }).addTo(map);
-
-      // Create custom icon
-      const customIcon = L.icon({
-        iconUrl: 'https://cdn-icons-png.flaticon.com/512/3097/3097144.png',
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
-        popupAnchor: [0, -16]
-      });
-
-      // Add markers for each booking
-      const validBookings = bookings.filter(
-        booking => booking.from_latitude && booking.from_longitude
-      );
-
-      if (validBookings.length > 0) {
-        validBookings.forEach((booking) => {
-          const lat = parseFloat(booking.from_latitude || '0');
-          const lng = parseFloat(booking.from_longitude || '0');
-          
-          if (lat && lng) {
-            L.marker([lat, lng], { icon: customIcon })
-              .addTo(map)
-              .bindPopup(`
-                <strong>Booking: ${booking.booking_code}</strong><br>
-                From: ${booking.place}<br>
-                To: ${booking.destination_place}<br>
-                Status: ${booking.status}
-              `);
-          }
-        });
-
-        // Center map on the first booking
-        const firstBooking = validBookings[0];
-        const firstLat = parseFloat(firstBooking.from_latitude || '0');
-        const firstLng = parseFloat(firstBooking.from_longitude || '0');
-        if (firstLat && firstLng) {
-          map.setView([firstLat, firstLng], 13);
-        }
-
-        // Animate between markers
-        let index = 0;
-        const interval = setInterval(() => {
-          const booking = validBookings[index];
-          const lat = parseFloat(booking.from_latitude || '0');
-          const lng = parseFloat(booking.from_longitude || '0');
-          
-          if (lat && lng) {
-            map.panTo([lat, lng]);
-          }
-          
-          index = (index + 1) % validBookings.length;
-        }, 5000);
-
-        // Clean up
-        return () => {
-          clearInterval(interval);
-          map.remove();
-        };
-      }
-    };
-
-    // Clean up
-    return () => {
-      // Only remove if no other component is using Leaflet
-      // This is simplified; a more robust solution would track usage
-      document.head.removeChild(linkElement);
-    };
-  }, [bookings]);
-
-  return <div id="map" className="h-full min-h-[300px] rounded-md"></div>;
-};
 
 const LiveMap: React.FC = () => {
-  const { stats, loading } = useDashboard();
-  const [activeBookings, setActiveBookings] = useState<Booking[]>([]);
-
+  const { stats } = useDashboard();
+  const mapRef = useRef<HTMLDivElement>(null);
+  const [mapInitialized, setMapInitialized] = useState(false);
+  
   useEffect(() => {
-    if (stats?.activeBookings) {
-      setActiveBookings(stats.activeBookings);
-    }
-  }, [stats]);
+    // Skip if no active bookings or map is already initialized
+    if (!stats?.activeBookings?.length || mapInitialized) return;
+    
+    const loadMap = async () => {
+      try {
+        // We need to make sure Leaflet is available in the window object
+        if (!window.L) {
+          console.error('Leaflet is not loaded. Make sure to include the Leaflet script and CSS.');
+          return;
+        }
 
+        const L = window.L;
+        
+        // Initialize map only if it hasn't been already
+        if (mapRef.current && !mapInitialized) {
+          const mapOptions = {
+            center: [17.385044, 78.486671],
+            zoom: 12
+          };
+          
+          // Create map instance
+          const map = L.map(mapRef.current, mapOptions);
+          
+          // Add tile layer (OpenStreetMap)
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+          }).addTo(map);
+          
+          // Custom icon for markers
+          const customIcon = L.icon({
+            iconUrl: 'car.png', // Make sure this image is available in your public folder
+            iconSize: [30, 30],
+            iconAnchor: [15, 15],
+            popupAnchor: [0, -15]
+          });
+          
+          // Add markers for active bookings
+          stats.activeBookings.forEach((booking: any) => {
+            if (booking.from_latitude && booking.from_longitude) {
+              L.marker(
+                [parseFloat(booking.from_latitude), parseFloat(booking.from_longitude)], 
+                { icon: customIcon }
+              )
+              .addTo(map)
+              .bindPopup(`Booking: ${booking.booking_code || 'N/A'}`);
+            }
+          });
+          
+          // Set map bounds to fit all markers
+          if (stats.activeBookings.length > 0) {
+            const latlngs = stats.activeBookings
+              .filter((booking: any) => booking.from_latitude && booking.from_longitude)
+              .map((booking: any) => [
+                parseFloat(booking.from_latitude), 
+                parseFloat(booking.from_longitude)
+              ]);
+            
+            if (latlngs.length > 0) {
+              map.fitBounds(L.latLngBounds(latlngs));
+            }
+          }
+          
+          setMapInitialized(true);
+        }
+      } catch (error) {
+        console.error('Error initializing map:', error);
+      }
+    };
+    
+    loadMap();
+    
+    // Cleanup function
+    return () => {
+      if (mapRef.current && mapInitialized && window.L) {
+        // @ts-ignore - we know map exists on mapRef.current because we set it above
+        const map = mapRef.current._leaflet_map;
+        if (map) map.remove();
+        setMapInitialized(false);
+      }
+    };
+  }, [stats?.activeBookings, mapInitialized]);
+  
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>Live Ride Tracking</span>
-          <span className="text-sm font-normal text-gray-500">
-            {activeBookings.length} active rides
-          </span>
-        </CardTitle>
+        <CardTitle>Live Map</CardTitle>
       </CardHeader>
-      <CardContent className="h-[400px] p-0 overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <Loader className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : (
-          <MapComponent bookings={activeBookings} />
-        )}
+      <CardContent className="relative p-0 h-[300px]">
+        <div 
+          ref={mapRef} 
+          className="h-full w-full rounded-b-lg"
+          style={{ minHeight: '300px' }}
+        />
       </CardContent>
     </Card>
   );

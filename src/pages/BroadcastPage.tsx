@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,11 +7,15 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Megaphone, InfoIcon } from 'lucide-react';
 import api from '@/services/api';
+import { Editor } from '@tinymce/tinymce-react';
 
 const BroadcastPage: React.FC = () => {
   const [broadcastMessage, setBroadcastMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoaading] = useState(true);
   const { toast } = useToast();
+  const editorRef = useRef(null);
+ 
   
   const handleSendBroadcast = async () => {
     if (!broadcastMessage.trim()) {
@@ -31,7 +35,12 @@ const BroadcastPage: React.FC = () => {
     });
     
     try {
-      const response = await api.broadcastMessage(broadcastMessage);
+
+      if (editorRef.current) {
+        console.log(editorRef.current.getContent());
+      }
+      
+      const response = await api.broadcastMessage(editorRef.current ? editorRef.current.getContent() : broadcastMessage);
       
       if (response && response.status) {
         toast({
@@ -82,14 +91,29 @@ const BroadcastPage: React.FC = () => {
             
             <div className="space-y-2">
               <label htmlFor="broadcast-message" className="text-sm font-medium">
-                Message Content
+                Message Content {loading && '(Loading editor...)'}
+
               </label>
-              <Textarea 
-                id="broadcast-message"
-                value={broadcastMessage}
-                onChange={(e) => setBroadcastMessage(e.target.value)}
-                className="min-h-[200px]"
-                placeholder="Enter your broadcast message here..."
+              <Editor
+              apiKey='g9iv4jdj1r2ogyuni0bk8x9c0vh7vnp9ip2jd5u62nzbh67y'
+                onInit={(evt, editor) =>{
+                  editorRef.current = editor
+                  setLoaading(false)
+                }}
+                init={{
+                  height: 500,
+                  menubar: false,
+                  plugins: [
+                    'advlist autolink lists link image charmap print preview anchor',
+                    'searchreplace visualblocks code fullscreen',
+                    'insertdatetime media table paste code help wordcount'
+                  ],
+                  toolbar: 'undo redo | formatselect | ' +
+                  'bold italic backcolor | alignleft aligncenter ' +
+                  'alignright alignjustify | bullist numlist outdent indent | ' +
+                  'removeformat | help',
+                  content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+                }}
               />
             </div>
           </CardContent>

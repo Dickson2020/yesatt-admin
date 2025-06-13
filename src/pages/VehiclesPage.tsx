@@ -38,13 +38,7 @@ const VehiclesPage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentVehicle, setCurrentVehicle] = useState<Vehicle | null>(null);
-  const [formData, setFormData] = useState({
-    car_number: '',
-    car_name: '',
-    car_color: '',
-    seats: '',
-    car_id: ''
-  });
+  const [formData, setFormData] = useState(null);
 
   const { toast } = useToast();
 
@@ -59,15 +53,36 @@ const VehiclesPage: React.FC = () => {
     await refreshStats();
   };
 
+
+  const [loadingVehicle, setLoadingVehicle] = useState(false);
   const handleEditVehicle = (vehicle: Vehicle) => {
     setCurrentVehicle(vehicle);
-    setFormData({
-      car_number: vehicle.car_number,
-      car_name: vehicle.car_name,
-      car_color: vehicle.car_color,
-      seats: vehicle.seats.toString(),
-      car_id: vehicle.id.toString()
-    });
+    const fetchVehicleInfo = async (vin: string) => {
+      setLoadingVehicle(true)
+      try {
+        const response = await api.getVehicleInfo(vin);
+        if (response?.status) {
+          setFormData(response?.data);
+        } else {
+          toast({
+            title: 'Error',
+            description: 'Failed to fetch vehicle information',
+            variant: 'destructive',
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching vehicle info:', error);
+        toast({
+          title: 'Error',
+          description: 'An error occurred while fetching vehicle information',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoadingVehicle(false)
+      }
+    };
+
+    fetchVehicleInfo(vehicle.car_number);
     setIsEditing(true);
   };
 
@@ -181,7 +196,7 @@ const VehiclesPage: React.FC = () => {
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center">
                         <div className="h-12 w-12 bg-primary bg-opacity-10 rounded-full flex items-center justify-center text-primary mr-3">
-                          <Car className="h-6 w-6" />
+                          <Car className="h-6 w-6" color='#fff'/>
                         </div>
                         <div>
                           <p className="font-medium">{vehicle.car_color} {vehicle.car_name}</p>
@@ -197,17 +212,17 @@ const VehiclesPage: React.FC = () => {
                     </div>
 
                     <div className="flex space-x-2 pt-2 border-t">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="flex-1"
                         onClick={() => handleEditVehicle(vehicle)}
                       >
-                        <Edit className="h-4 w-4 mr-1" /> View/Edit
+                        <Edit className="h-4 w-4 mr-1" /> View
                       </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="flex-1 text-red-500 hover:text-red-700 hover:bg-red-50 focus:ring-red-500"
                         onClick={() => handleDeleteVehicle(vehicle)}
                       >
@@ -219,92 +234,56 @@ const VehiclesPage: React.FC = () => {
               ))}
             </div>
           )}
+          </div>
         </div>
-      </div>
-
       {/* Edit Vehicle Dialog */}
       <Dialog open={isEditing} onOpenChange={setIsEditing}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Edit Vehicle</DialogTitle>
-            <DialogDescription>
-              Update the vehicle information below.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="car-name" className="text-right">
-                Vehicle Name
-              </Label>
-              <Input
-                id="car-name"
-                name="car_name"
-                value={formData.car_name}
-                onChange={handleChange}
-                className="col-span-3"
-              />
+        <DialogTitle>More Vehicle Informations</DialogTitle>
+        <div className="grid gap-4 py-4 max-h-[400px] overflow-y-auto">
+          <h4 className="font-medium mb-2">Vehicle Information</h4>
+          {loadingVehicle ? (
+            <div className="flex items-center justify-center py-8">
+          <Loader className="h-8 w-8 animate-spin text-primary" />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="car-vin" className="text-right">
-                VIN/Number
-              </Label>
-              <Input
-                id="car-vin"
-                name="car_number"
-                value={formData.car_number}
-                onChange={handleChange}
-                className="col-span-3"
-              />
+          ) : formData ? (
+            <div className="grid grid-cols-1 gap-4" style={{ textAlign: 'left' }}>
+          {Object.entries(formData[0]).map(([key, value]) => (
+            <div key={key} className="grid grid-cols-2 gap-2 text-sm">
+              <p className="text-gray-500">{key.replace(/_/g, ' ')}</p>
+              <p>{value}</p>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="car-color" className="text-right">
-                Color
-              </Label>
-              <Input
-                id="car-color"
-                name="car_color"
-                value={formData.car_color}
-                onChange={handleChange}
-                className="col-span-3"
-              />
+          ))}
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="car-seats" className="text-right">
-                Seats
-              </Label>
-              <Input
-                id="car-seats"
-                name="seats"
-                type="number"
-                value={formData.seats}
-                onChange={handleChange}
-                className="col-span-3"
-              />
+          ) : (
+            <div className="flex items-center justify-center py-8">
+          <Loader className="h-8 w-8 animate-spin text-primary" />
             </div>
-
-            {currentVehicle?.driver && (
-              <div className="mt-4 border-t pt-4">
-                <h4 className="font-medium mb-2">Driver Information</h4>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <p className="text-gray-500">Name:</p>
-                  <p>{currentVehicle.driver.name}</p>
-                  <p className="text-gray-500">Email:</p>
-                  <p>{currentVehicle.driver.email}</p>
-                  <p className="text-gray-500">Phone:</p>
-                  <p>{currentVehicle.driver.phone}</p>
-                  <p className="text-gray-500">Country:</p>
-                  <p>{currentVehicle.driver.country}</p>
-                  <p className="text-gray-500">Status:</p>
-                  <p>{Number(currentVehicle.driver.status) === 0 ? 'Offline' : 'Online'}</p>
-                </div>
-              </div>
-            )}
+          )}
+          {currentVehicle?.driver && (
+            <div className="mt-4 border-t pt-4">
+          <h4 className="font-medium mb-2">Driver Information</h4>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <p className="text-gray-500">Name:</p>
+            <p>{currentVehicle.driver.name}</p>
+            <p className="text-gray-500">Email:</p>
+            <p>{currentVehicle.driver.email}</p>
+            <p className="text-gray-500">Phone:</p>
+            <p>{currentVehicle.driver.phone}</p>
+            <p className="text-gray-500">Country:</p>
+            <p>{currentVehicle.driver.country}</p>
+            <p className="text-gray-500">Status:</p>
+            <p>{Number(currentVehicle.driver.status) === 0 ? 'Offline' : 'Online'}</p>
           </div>
+            </div>
+          )}
+        </div>
+          </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditing(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleUpdateVehicle}>Save Changes</Button>
+        <Button variant="outline" onClick={() => setIsEditing(false)}>
+          Cancel
+        </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const RidersPage: React.FC = () => {
-  const [riders, setRiders] = useState<User[]>([]);
+  const [riders, setRiders] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [pagination, setPagination] = useState<PaginationData>({
@@ -52,9 +52,12 @@ const RidersPage: React.FC = () => {
     try {
       setLoading(true);
       const response = await api.getRiders(page);
+
+      console.log(response)
       
       if (response) {
-        setRiders(response.data?.users || []);
+
+        setRiders(response.users || []);
         setPagination({
           currentPage: page,
           totalPages: response.pagination?.totalPages || 1,
@@ -119,11 +122,36 @@ const RidersPage: React.FC = () => {
     setIsBalanceModalOpen(true);
   };
 
-  const filteredRiders = riders.filter(rider => 
+  const filteredRiders = Array.isArray(riders) ? riders.filter(rider => 
     rider.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     rider.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     rider.phone.includes(searchTerm)
-  );
+  ) : [];
+
+
+  const exportRiders = () => {
+    const csvContent = [
+      ["Name", "Email", "Phone", "Country", "Stripe ID", "Status"],
+      ...riders.map(rider => [
+        rider.name,
+        rider.email,
+        rider.phone,
+        rider.country,
+        rider.stripe_customer_id || "N/A",
+        Number(rider.verified) === 1 ? "Active" : "Not Verified"
+      ])
+    ].map(e => e.join(",")).join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "riders.csv");
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <DashboardLayout>
@@ -140,7 +168,7 @@ const RidersPage: React.FC = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button variant="outline">Export</Button>
+            <Button variant="outline" onClick={exportRiders}>Export</Button>
           </div>
         </div>
 

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Users, Car, Calendar, Compass, TrendingUp } from 'lucide-react';
 import { useDashboard } from '@/contexts/DashboardContext';
@@ -23,12 +22,20 @@ const formatCurrency = (value: number): string => {
 const DashboardPage: React.FC = () => {
   const { stats, loading } = useDashboard();
 
-  // Create properly typed dispatch stats
+  // Create properly typed dispatch stats - handle both object and array cases
   const dispatchStats = {
-    waiting: stats?.dispatchStat?.waiting || 0,
-    onTheWay: stats?.dispatchStat?.onTheWay || 0,
-    arriving: stats?.dispatchStat?.arriving || 0
+    waiting: 0,
+    onTheWay: 0,
+    arriving: 0
   };
+
+  // Handle dispatchStat if it exists and is an object with the expected properties
+  if (stats?.dispatchStat && typeof stats.dispatchStat === 'object' && !Array.isArray(stats.dispatchStat)) {
+    const dispatchStat = stats.dispatchStat as any;
+    dispatchStats.waiting = dispatchStat.waiting || 0;
+    dispatchStats.onTheWay = dispatchStat.onTheWay || 0;
+    dispatchStats.arriving = dispatchStat.arriving || 0;
+  }
 
   return (
     <DashboardLayout>
@@ -40,7 +47,7 @@ const DashboardPage: React.FC = () => {
           {loading ? (
             <>
               {[1, 2, 3, 4].map((_, i) => (
-                <Skeleton key={i} className="h-32 w-full" />
+                <Skeleton key={i}  className="h-32 w-full" />
               ))}
             </>
           ) : (
@@ -48,22 +55,22 @@ const DashboardPage: React.FC = () => {
               <StatCard 
                 title="Total Riders"
                 value={stats?.users || 0}
-                icon={<Users className="h-6 w-6" />}
+                icon={<Users size={20} color='#fff' className="h-6 w-6" />}
               />
               <StatCard 
                 title="Total Drivers"
                 value={stats?.drivers || 0}
-                icon={<Users className="h-6 w-6" />}
+                icon={<Users  size={20} color='#fff' className="h-6 w-6" />}
               />
               <StatCard 
                 title="Active Bookings"
                 value={stats?.activeBookings?.length || 0}
-                icon={<Calendar className="h-6 w-6" />}
+                icon={<Calendar  size={20} color='#fff' className="h-6 w-6" />}
               />
               <StatCard 
                 title="Registered Vehicles"
                 value={stats?.uploadedCars || 0}
-                icon={<Car className="h-6 w-6" />}
+                icon={<Car  size={20} color='#fff' className="h-6 w-6" />}
               />
             </>
           )}
@@ -80,19 +87,19 @@ const DashboardPage: React.FC = () => {
           ) : (
             <>
               <PerformanceCard
-                title="Total Deposits"
+                title="Total Monthly Deposits"
                 amount={formatCurrency(stats?.depositPerformance?.total || 0)}
                 percentage={stats?.depositPerformance?.percentagePerformance || 0}
                 growthIndicator={stats?.depositPerformance?.growthIndicator || 'positive'}
               />
               <PerformanceCard
-                title="Total Withdrawals"
+                title="Total Monthly Withdrawals"
                 amount={formatCurrency(stats?.payoutPerformance?.total || 0)}
                 percentage={stats?.payoutPerformance?.percentagePerformance || 0}
                 growthIndicator={stats?.payoutPerformance?.growthIndicator || 'positive'}
               />
               <PerformanceCard
-                title="Ride Share Charges"
+                title="Monthly Ride Share Charges"
                 amount={formatCurrency(stats?.cancelChargePerformance?.total || 0)}
                 percentage={stats?.cancelChargePerformance?.percentagePerformance || 0}
                 growthIndicator={stats?.cancelChargePerformance?.growthIndicator || 'positive'}

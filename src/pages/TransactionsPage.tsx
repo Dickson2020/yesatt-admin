@@ -34,6 +34,7 @@ const formatDate = (dateString: string): string => {
 };
 
 const TransactionsPage: React.FC = () => {
+
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -53,9 +54,11 @@ const TransactionsPage: React.FC = () => {
     try {
       setLoading(true);
       const response = await api.getTransactions(page);
+
+      console.log(response)
       
-      if (response && response.data) {
-        setTransactions(response.data.transactions || []);
+      if (response) {
+        setTransactions(response?.transactions || []);
         if (response.pagination) {
           setPagination({
             currentPage: page,
@@ -81,9 +84,9 @@ const TransactionsPage: React.FC = () => {
   };
 
   const getTransactionTypeIcon = (type: string) => {
-    if (type.toLowerCase().includes('payment') || type.toLowerCase().includes('deposit')) {
+    if (type.toLowerCase().includes('credit') || type.toLowerCase().includes('deposit')) {
       return <DollarSign className="h-4 w-4 text-green-500" />;
-    } else if (type.toLowerCase().includes('withdrawal') || type.toLowerCase().includes('refund')) {
+    } else if (type.toLowerCase().includes('debit') || type.toLowerCase().includes('refund')) {
       return <CreditCard className="h-4 w-4 text-red-500" />;
     } else {
       return <CreditCard className="h-4 w-4 text-gray-500" />;
@@ -97,16 +100,45 @@ const TransactionsPage: React.FC = () => {
   );
 
   // Calculate summary amounts
-  const totalInflow = filteredTransactions
-    .filter(t => t.transaction_type.toLowerCase().includes('payment') || t.transaction_type.toLowerCase().includes('deposit'))
+  const totalInflow = filteredTransactions .filter(t => t.transaction_type.toLowerCase().includes('credit') || t.transaction_type.toLowerCase().includes('deposit'))
     .reduce((sum, t) => sum + parseFloat(t.amount || '0'), 0);
 
-  const totalOutflow = filteredTransactions
-    .filter(t => t.transaction_type.toLowerCase().includes('withdrawal') || t.transaction_type.toLowerCase().includes('refund'))
-    .reduce((sum, t) => sum + parseFloat(t.amount || '0'), 0);
+
+    
+  // Calculate summary amounts
+  const totalOutflow = filteredTransactions .filter(t => t.transaction_type.toLowerCase().includes('debit') || t.transaction_type.toLowerCase().includes('refund'))
+  .reduce((sum, t) => sum + parseFloat(t.amount || '0'), 0);
 
   const totalCharges = filteredTransactions
     .reduce((sum, t) => sum + parseFloat(t.charges || '0'), 0);
+
+
+
+    const exportTransactions = () => {
+      const csvContent = [
+        ["Transaction ID", "Type", "Intent", "Intent Type", "Description", "Amount", "Date", "Charges"],
+        ...transactions.map(t => [
+          t.transaction_id,
+          t.transaction_type,
+          t.intent,
+          t.intent_type,
+          t.description,
+          t.amount,
+          formatDate(t.transaction_date),
+          t.charges
+        ])
+      ].map(e => e.join(",")).join("\n");
+  
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "transactions.csv");
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
 
   return (
     <DashboardLayout>
@@ -117,13 +149,13 @@ const TransactionsPage: React.FC = () => {
             <div className="relative">
               <Search className="h-4 w-4 absolute left-2.5 top-2.5 text-gray-500" />
               <Input
-                placeholder="Search transactions..."
+                placeholder="Transaction ID"
                 className="pl-8"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button variant="outline">
+            <Button variant="outline"  onClick={exportTransactions}>
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
@@ -131,7 +163,7 @@ const TransactionsPage: React.FC = () => {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -158,19 +190,7 @@ const TransactionsPage: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Total Charges</p>
-                  <p className="text-2xl font-bold text-blue-600">{formatCurrency(totalCharges.toString())}</p>
-                </div>
-                <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
-                  <DollarSign className="h-6 w-6 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        
         </div>
 
         <Card>

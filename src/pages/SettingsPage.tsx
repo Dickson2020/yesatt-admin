@@ -351,7 +351,6 @@ const SettingsPage: React.FC = () => {
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="staff">Staff Management</TabsTrigger>
             <TabsTrigger value="api">API Keys</TabsTrigger>
-            <TabsTrigger value="broadcast">Broadcast</TabsTrigger>
           </TabsList>
           
           {/* Profile Tab */}
@@ -667,45 +666,7 @@ const SettingsPage: React.FC = () => {
             </Card>
           </TabsContent>
           
-          {/* Broadcast Tab */}
-          <TabsContent value="broadcast" className="space-y-4 py-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Broadcast Message</CardTitle>
-                <CardDescription>
-                  Send a message to all users in the system
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center pb-4">
-                  <Megaphone className="h-5 w-5 text-amber-500 mr-2" />
-                  <p className="text-sm text-gray-500">
-                    This message will be sent to all users. Use this feature responsibly.
-                  </p>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="broadcast-message">Message Content</Label>
-                  <textarea 
-                    id="broadcast-message"
-                    value={broadcastMessage}
-                    onChange={(e) => setBroadcastMessage(e.target.value)}
-                    className="flex min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    placeholder="Enter your broadcast message here..."
-                  />
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  onClick={handleBroadcastMessage} 
-                  disabled={isSubmittingBroadcast || !broadcastMessage.trim()}
-                >
-                  <Megaphone className="h-4 w-4 mr-2" />
-                  {isSubmittingBroadcast ? 'Broadcasting...' : 'Send Broadcast'}
-                </Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
+         
         </Tabs>
       </div>
     </DashboardLayout>

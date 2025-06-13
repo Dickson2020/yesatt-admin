@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,43 +15,116 @@ import { MoreHorizontal, Search, UserPlus, RefreshCw } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
+import api from '@/services/api';
+import PaginationControls from '@/components/tables/PaginationControls';
 
 const DriversPage = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [drivers, setDrivers] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  
-  // Mock function to simulate fetching drivers
-  const fetchDrivers = (page: number = 1) => {
-    setLoading(true);
-    // Simulating API call
-    setTimeout(() => {
-      const mockDrivers = Array.from({ length: 10 }, (_, index) => ({
-        id: index + 1 + (page - 1) * 10,
-        name: `Driver ${index + 1 + (page - 1) * 10}`,
-        email: `driver${index + 1 + (page - 1) * 10}@example.com`,
-        phone: `+1 555-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
-        country: ['USA', 'UK', 'Canada', 'Australia', 'Germany'][Math.floor(Math.random() * 5)],
-        stripe_customer_id: `cus_${Math.random().toString(36).substring(2, 10)}`,
-        verified: Math.random() > 0.3 ? 1 : 0,
-        account_balance: Math.floor(Math.random() * 1000)
-      }));
-      
-      setDrivers(mockDrivers);
-      setLoading(false);
-    }, 1000);
-  };
-  
-  // Fetch drivers on initial load
-  React.useEffect(() => {
-    fetchDrivers();
+    const [searchTerm, setSearchTerm] = useState<string>('');
+    const [pagination, setPagination] = useState<any>({
+      currentPage: 1,
+      totalPages: 1,
+      totalItems: 0
+    });
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState<boolean>(false);
+    const [currentRiderId, setCurrentRiderId] = useState<number | null>(null);
+    const [isBalanceModalOpen, setIsBalanceModalOpen] = useState<boolean>(false);
+    const [currentBalance, setCurrentBalance] = useState<number>(0);
+   
+
+  useEffect(() => {
+    fetchDrivers(1);
   }, []);
-  
+
+  const fetchDrivers = async (page: number) => {
+    try {
+      setLoading(true);
+      const response = await api.getDrivers(page);
+
+      console.log(response)
+      
+      if (response) {
+
+        setDrivers(response.users || []);
+        setPagination({
+          currentPage: page,
+          totalPages: response.pagination?.totalPages || 1,
+          totalItems: response.pagination?.totalItems || 0
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching riders:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load riders",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
     fetchDrivers(page);
   };
+
+  const handleDelete = async (id) => {
+   
+
+       // In a real app, this would show a confirmation dialog and then call the API
+       toast({
+        title: "In progress",
+        description: `Driver with ID ${id} will be deleted`,
+        variant: "default"
+      });
+    try {
+      const response = await api.deleteAccount(id, 'driver');
+      
+      if (response && response.status) {
+        toast({
+          title: "Success",
+          description: "Driver deleted successfully",
+        });
+        fetchDrivers(pagination.currentPage);
+      } else {
+        toast({
+          title: "Error",
+          description: response.message || "Failed to delete driver",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting rider:', error);
+      toast({
+        title: "Error",
+        description: "An error occurred while deleting the driver",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setCurrentRiderId(null);
+    }
+  };
+
+  const openDeleteDialog = (id: number) => {
+    setCurrentRiderId(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const viewBalance = (balance: number) => {
+    setCurrentBalance(balance);
+    setIsBalanceModalOpen(true);
+  };
+
+  const filteredRiders = Array.isArray(drivers) ? drivers.filter(rider => 
+    rider.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    rider.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    rider.phone.includes(searchTerm)
+  ) : [];
+  
   
   const handleRefresh = () => {
     fetchDrivers(currentPage);
@@ -89,6 +162,8 @@ const DriversPage = () => {
             <Input
               placeholder="Search drivers..."
               className="pl-8"
+              value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <div className="flex gap-2">
@@ -96,10 +171,7 @@ const DriversPage = () => {
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>
-            <Button size="sm">
-              <UserPlus className="h-4 w-4 mr-2" />
-              Add Driver
-            </Button>
+          
           </div>
         </div>
         
@@ -133,7 +205,7 @@ const DriversPage = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {drivers.map((driver) => (
+                    {filteredRiders.map((driver) => (
                       <TableRow key={driver.id}>
                         <TableCell>{driver.name}</TableCell>
                         <TableCell>{driver.email}</TableCell>
@@ -156,7 +228,7 @@ const DriversPage = () => {
                               <DropdownMenuItem onClick={() => previewBalance(driver.account_balance)}>
                                 View Wallet Balance
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => triggerDelete(driver.id)}>
+                              <DropdownMenuItem onClick={() => handleDelete(driver.id)}>
                                 Delete
                               </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -170,36 +242,10 @@ const DriversPage = () => {
             )}
             
             {/* Pagination */}
-            <div className="flex justify-center mt-4">
-              <nav className="flex items-center space-x-1" id="drivers-list-pagination">
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  disabled={currentPage === 1}
-                  onClick={() => handlePageChange(currentPage - 1)}
-                >
-                  &lt;
-                </Button>
-                {[1, 2, 3].map((page) => (
-                  <Button 
-                    key={page} 
-                    variant={page === currentPage ? "default" : "outline"}
-                    size="icon"
-                    onClick={() => handlePageChange(page)}
-                  >
-                    {page}
-                  </Button>
-                ))}
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  disabled={currentPage === 3}
-                  onClick={() => handlePageChange(currentPage + 1)}
-                >
-                  &gt;
-                </Button>
-              </nav>
-            </div>
+            <PaginationControls
+                  pagination={pagination}
+                  onPageChange={handlePageChange}
+                />
           </CardContent>
         </Card>
       </div>

@@ -27,13 +27,15 @@ const BookingsPage: React.FC = () => {
     fetchBookings(1);
   }, []);
 
-  const fetchBookings = async (page: number) => {
+  const fetchBookings = async (page: number, filter = 'pending') => {
     try {
       setLoading(true);
-      const response = await api.getBookings(page);
+      const response = await api.getBookings(page, filter);
+
+      console.log(response)
       
-      if (response && response.data) {
-        setBookings(response.data.bookings || []);
+      if (response) {
+        setBookings(response.bookings || []);
         if (response.pagination) {
           setPagination({
             currentPage: page,
@@ -59,6 +61,7 @@ const BookingsPage: React.FC = () => {
   };
 
   const handleFilterChange = (filter: string) => {
+    fetchBookings(1, filter)
     setActiveFilter(filter);
   };
 
@@ -74,7 +77,7 @@ const BookingsPage: React.FC = () => {
         return 'bg-green-100 text-green-800 border-green-200';
       case 'cancelled':
         return 'bg-red-100 text-red-800 border-red-200';
-      case 'in_progress':
+      case 'accepted':
         return 'bg-blue-100 text-blue-800 border-blue-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -99,9 +102,8 @@ const BookingsPage: React.FC = () => {
             <Tabs defaultValue="pending" onValueChange={handleFilterChange}>
               <TabsList className="mb-4">
                 <TabsTrigger value="pending">Pending</TabsTrigger>
-                <TabsTrigger value="in_progress">In Progress</TabsTrigger>
+                <TabsTrigger value="accepted">In Progress</TabsTrigger>
                 <TabsTrigger value="completed">Completed</TabsTrigger>
-                <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
               </TabsList>
 
               <TabsContent value={activeFilter}>
@@ -163,9 +165,7 @@ const BookingsPage: React.FC = () => {
                                     {booking.payment ? booking.payment.toUpperCase() : 'N/A'}
                                   </span>
                                 </div>
-                                <div>
-                                  <Button variant="outline" size="sm">View Details</Button>
-                                </div>
+                               
                               </div>
                             </div>
                           </div>

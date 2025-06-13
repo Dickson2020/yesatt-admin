@@ -1,7 +1,7 @@
 
 import { ApiResponse, DashboardStats, User, Driver, Vehicle, Booking, Transaction, KYCDocument, Ticket } from "../types";
 
-const API_URL = "https://booker-olive-kappa.vercel.app";
+const API_URL = 'https://booker-olive-kappa.vercel.app' //"https://booker-olive-kappa.vercel.app";
 
 const api = {
   login: async (email: string, password: string): Promise<ApiResponse<{ id: number }>> => {
@@ -15,8 +15,14 @@ const api = {
     return await response.json();
   },
 
+  getKYCRequests: async (): Promise<ApiResponse<KYCDocument[]>> => {
+    const response = await fetch(`${API_URL}/admin/kyc-requests`);
+    return await response.json();
+  },
+  
   getDashboardStats: async (): Promise<ApiResponse<DashboardStats>> => {
-    const response = await fetch(`${API_URL}/management-summary`);
+    const getID = localStorage.getItem('logged_in')? localStorage.getItem('logged_in') : 1;
+    const response = await fetch(`${API_URL}/management-summary?id=${getID}`);
     return await response.json();
   },
 
@@ -28,10 +34,14 @@ const api = {
   getDrivers: async (page: number = 1): Promise<ApiResponse<{ users: Driver[] }>> => {
     const response = await fetch(`${API_URL}/admin/fetch-drivers?page=${page}`);
     return await response.json();
-  },
+      },
 
-  getBookings: async (page: number = 1): Promise<ApiResponse<{ bookings: Booking[] }>> => {
-    const response = await fetch(`${API_URL}/admin/fetch-bookings?page=${page}`);
+      getVehicleInfo: async (vin: string): Promise<ApiResponse<Vehicle>> => {
+        const response = await fetch(`${API_URL}/get-vehicle-info?vin=${vin}`);
+        return await response.json();
+      },
+
+      getBookings: async (page: number = 1, filter: string = 'pending'): Promise<ApiResponse<{ bookings: Booking[] }>> => {  const response = await fetch(`${API_URL}/admin/fetch-bookings?page=${page}&filter=${filter}`);
     return await response.json();
   },
 

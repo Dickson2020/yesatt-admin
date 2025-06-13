@@ -10,7 +10,6 @@ const LiveMap: React.FC = () => {
   
   useEffect(() => {
     // Skip if no active bookings or map is already initialized
-    if (!stats?.activeBookings?.length || mapInitialized) return;
     
     const loadMap = async () => {
       try {

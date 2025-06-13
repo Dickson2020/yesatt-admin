@@ -1,9 +1,9 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { DashboardProvider } from '@/contexts/DashboardContext';
 
 // Pages
 import LoginPage from "./pages/LoginPage";
@@ -19,6 +19,7 @@ import SettingsPage from "./pages/SettingsPage";
 import VerificationPage from "./pages/VerificationPage";
 import BroadcastPage from "./pages/BroadcastPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import KYCVerifiction from "./pages/KYCVerification";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,16 +40,64 @@ const App = () => (
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/riders" element={<RidersPage />} />
-          <Route path="/drivers" element={<DriversPage />} />
-          <Route path="/vehicles" element={<VehiclesPage />} />
-          <Route path="/bookings" element={<BookingsPage />} />
-          <Route path="/support" element={<SupportPage />} />
-          <Route path="/transactions" element={<TransactionsPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/verification" element={<VerificationPage />} />
-          <Route path="/broadcast" element={<BroadcastPage />} />
+          <Route path="/dashboard" element={
+            <DashboardProvider>
+              <DashboardPage />
+            </DashboardProvider>
+          } />
+          <Route path="/riders" element={
+            <DashboardProvider>
+              <RidersPage />
+            </DashboardProvider>
+          } />
+          <Route path="/drivers" element={
+            <DashboardProvider>
+              <DriversPage />
+            </DashboardProvider>
+          } />
+          <Route path="/vehicles" element={
+            <DashboardProvider>
+              <VehiclesPage />
+            </DashboardProvider>
+          } />
+          <Route path="/bookings" element={
+            <DashboardProvider>
+              <BookingsPage />
+            </DashboardProvider>
+          } />
+          <Route path="/support" element={
+            <DashboardProvider>
+              <SupportPage />
+            </DashboardProvider>
+          } />
+          <Route path="/transactions" element={
+            <DashboardProvider>
+              <TransactionsPage />
+            </DashboardProvider>
+          } />
+          <Route path="/settings" element={
+            <DashboardProvider>
+              <SettingsPage />
+            </DashboardProvider>
+          } />
+          <Route path="/verification" element={
+            <DashboardProvider>
+              <VerificationPage />
+            </DashboardProvider>
+          } />
+
+          <Route path="/kyc" element={
+            <DashboardProvider>
+              <KYCVerifiction />
+            </DashboardProvider>
+          } />
+
+
+          <Route path="/broadcast" element={
+            <DashboardProvider>
+              <BroadcastPage />
+            </DashboardProvider>
+          } />
           <Route path="/profile" element={<Navigate to="/settings" replace />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

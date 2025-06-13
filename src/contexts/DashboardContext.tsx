@@ -22,9 +22,9 @@ export const DashboardProvider: React.FC<{children: ReactNode}> = ({ children })
   const fetchStats = async () => {
     try {
       setLoading(true);
-      const response = await api.getDashboardStats();
-      if (response && response.data) {
-        setStats(response.data);
+      const response = await api.getDashboardStats();      
+      if (response ) {
+        setStats(response);
         setError(null);
       } else {
         setError("Failed to fetch dashboard data");

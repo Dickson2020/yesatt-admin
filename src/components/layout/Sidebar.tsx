@@ -10,7 +10,8 @@ import {
   CreditCard, 
   Settings,
   LogOut,
-  Megaphone
+  Megaphone,
+  ScanText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDashboard } from '@/contexts/DashboardContext';
@@ -49,7 +50,13 @@ const Sidebar: React.FC = () => {
       name: 'Support',
       path: '/support',
       icon: <MessageSquare className="h-5 w-5" />,
-      badge: stats?.reports?.length
+      badge: stats?.reports?.length > 0? stats?.reports?.length : ''
+    },
+    {
+      name: 'KYC Verification',
+      path: '/kyc',
+      icon: <ScanText className="h-5 w-5" />,
+      badge: stats?.kyc?.length > 0 ? stats?.kyc?.length : ''
     },
     {
       name: 'Transactions',
@@ -74,27 +81,26 @@ const Sidebar: React.FC = () => {
         <div className="flex items-center justify-center h-16 border-b border-primary-300/30">
           <h1 className="text-xl font-bold">RideAdmin</h1>
         </div>
-
         <div className="flex-1 overflow-y-auto py-4 px-3">
           <nav className="space-y-1">
             {navItems.map((item) => (
               <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) => cn(
-                  "flex items-center px-4 py-3 text-sm rounded-lg transition-colors",
-                  isActive 
-                    ? "bg-white text-primary font-medium" 
-                    : "text-white hover:bg-primary-dark hover:bg-opacity-20"
-                )}
+          key={item.path}
+          to={item.path}
+          className={({ isActive }) => cn(
+            "flex items-center px-4 py-3 text-sm rounded-lg transition-colors",
+            isActive 
+              ? "bg-white text-primary font-medium" 
+              : "text-white hover:bg-primary-dark hover:bg-opacity-20"
+          )}
               >
-                <span className="mr-3">{item.icon}</span>
-                <span>{item.name}</span>
-                {item.badge && item.badge > 0 && (
-                  <span className="ml-auto bg-white text-primary text-xs font-bold px-2 py-0.5 rounded-full">
-                    {item.badge}
-                  </span>
-                )}
+          <span className="mr-3">{item.icon}</span>
+          <span>{item.name}</span>
+          {item.badge && item.badge > 0 && (
+            <span className="ml-auto bg-white text-primary text-xs font-bold px-2 py-0.5 rounded-full">
+              {item.badge}
+            </span>
+          )}
               </NavLink>
             ))}
           </nav>

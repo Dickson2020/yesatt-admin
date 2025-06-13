@@ -47,6 +47,8 @@ const LoginPage: React.FC = () => {
           title: 'Success',
           description: 'Login successful!',
         });
+
+        localStorage.setItem('logged_in', ''+response?.data?.id)
         
         // Navigate to dashboard
         setTimeout(() => {

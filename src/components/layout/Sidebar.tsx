@@ -79,7 +79,7 @@ const Sidebar: React.FC = () => {
     <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-primary text-white shadow-lg hidden md:block">
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-center h-16 border-b border-primary-300/30">
-          <h1 className="text-xl font-bold">RideAdmin</h1>
+          <h1 className="text-xl font-bold">Yesatt</h1>
         </div>
         <div className="flex-1 overflow-y-auto py-4 px-3">
           <nav className="space-y-1">

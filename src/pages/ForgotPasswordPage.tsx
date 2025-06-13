@@ -144,8 +144,8 @@ const ForgotPasswordPage: React.FC = () => {
     <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4 py-12">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-primary">RideAdmin</h1>
-          <p className="text-gray-600 mt-2">Ride-Sharing Admin Command Center</p>
+          <h1 className="text-2xl font-bold text-primary">Yesatt</h1>
+          <p className="text-gray-600 mt-2">Yesatt Ride-share dmin portal</p>
         </div>
         
         <Card className="border-none shadow-lg">
@@ -278,7 +278,7 @@ const ForgotPasswordPage: React.FC = () => {
         </Card>
         
         <div className="mt-4 text-center text-sm text-gray-600">
-          &copy; {new Date().getFullYear()} RideAdmin. All rights reserved.
+          &copy; {new Date().getFullYear()} Yesatt. All rights reserved.
         </div>
       </div>
     </div>
